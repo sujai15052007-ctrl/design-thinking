@@ -90,6 +90,14 @@ npm run dev:server
 
 The client is served at `http://localhost:5173`; the API listens at `http://localhost:5000`. Vite proxies `/api` requests to the API. For production, use `npm run build` to build the client and `npm --prefix server start` to start the API.
 
+### Deploy to Vercel
+
+The repository includes a Vercel serverless function at `api/[...path].js`, so the API routes and Vite frontend deploy together. Import the repository into Vercel with the project root set to the repository root; the checked-in `vercel.json` installs both root and server dependencies and builds the client into `dist`.
+
+In Vercel Project Settings → Environment Variables, configure `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and a strong private `JWT_SECRET`. The MySQL server must be hosted on a network-accessible service; `localhost` in Vercel refers to the function container, not your computer. Set `CLIENT_ORIGIN` to the deployed site's exact origin (for example, `https://your-project.vercel.app`) and redeploy after changing environment variables.
+
+The local `node-cron` expiry reminder runs only with the long-running Express server (`npm run dev:server` or `npm --prefix server start`); Vercel serverless functions do not keep that process alive between requests.
+
 ## API
 
 Except for registration and login, API routes require `Authorization: Bearer <token>`. Tokens expire after seven days. Validation and server errors use JSON responses with an `error` field. NGO endpoints and donation acceptance/completion require the `ngo` role.
