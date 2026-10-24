@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../api/client';
+import { exportCsv } from '../../utils/exportCsv';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -26,10 +28,18 @@ import {
 } from '@phosphor-icons/react';
 
 export default function WasteAnalyticsPage() {
-  const { analytics, user } = useApp();
+  const { analytics, user, inventory, showToast } = useApp();
   const [timeRange, setTimeRange] = useState('6m'); // '1m' | '6m' | '1y'
 
   const { monthlyTrend, categoryBreakdown, destinationSplit } = analytics;
+  const exportWasteHistory = async () => {
+    try {
+      const result = await api.get('/api/analytics/history');
+      exportCsv('reroot-waste-history.csv', result.history);
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  };
 
   // Custom Chart Tooltip
   const CustomAreaTooltip = ({ active, payload, label }) => {
@@ -159,6 +169,14 @@ export default function WasteAnalyticsPage() {
       </div>
 
       {/* Top Impact KPI Cards Row */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+        <button className="btn btn-secondary btn-sm" onClick={() => exportCsv('reroot-inventory.csv', inventory)} disabled={!inventory.length}>
+          Export inventory CSV
+        </button>
+        <button className="btn btn-secondary btn-sm" onClick={exportWasteHistory}>
+          Export waste history CSV
+        </button>
+      </div>
       <div
         style={{
           display: 'grid',
@@ -223,6 +241,27 @@ export default function WasteAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      <section className="card" aria-label="Streak activity calendar" style={{ background: 'var(--bg-elevated)', marginBottom: 'var(--space-8)' }}>
+        <h3 className="text-heading-3" style={{ fontSize: 'var(--text-lg)', color: 'var(--text-primary)' }}>Food-saving activity · last 90 days</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(10px, 1fr))', gap: 5, marginTop: 'var(--space-4)' }}>
+          {Array.from({ length: 90 }, (_, index) => {
+            const day = new Date();
+            day.setDate(day.getDate() - (89 - index));
+            const dateKey = day.toISOString().slice(0, 10);
+            const activity = analytics.streakCalendar?.find((entry) => String(entry.date).slice(0, 10) === dateKey);
+            const count = Number(activity?.activityCount || 0);
+            return (
+              <span
+                key={dateKey}
+                title={`${dateKey}: ${count} activity(ies)`}
+                aria-label={`${dateKey}: ${count} food-saving activities`}
+                style={{ aspectRatio: '1', borderRadius: 3, background: count ? `rgba(45, 80, 22, ${Math.min(0.9, 0.25 + count * 0.18)})` : 'var(--bg-inset)' }}
+              />
+            );
+          })}
+        </div>
+      </section>
 
       {/* Main Charts Row: Area Trend (Left 7 cols) & Donut Category Breakdown (Right 5 cols) */}
       <div

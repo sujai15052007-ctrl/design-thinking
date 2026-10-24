@@ -18,17 +18,28 @@ export default function ScheduleDonationModal({ targetNgo, onClose }) {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedItemIds.length === 0) {
       showToast('Please select at least one item to donate.', 'warning');
       return;
     }
 
-    selectedItemIds.forEach(id => {
-      donateInventoryItem(id, targetNgo?.id);
-    });
-
+    const pickup = new Date();
+    const selectedHour = pickupTimeSlot.match(/\b(\d{1,2}):(\d{2})\b/);
+    if (selectedHour) {
+      pickup.setHours(Number(selectedHour[1]), Number(selectedHour[2]), 0, 0);
+      if (pickup <= new Date()) pickup.setDate(pickup.getDate() + 1);
+    } else {
+      pickup.setHours(pickup.getHours() + 2, 0, 0, 0);
+    }
+    for (const id of selectedItemIds) {
+      const succeeded = await donateInventoryItem(id, targetNgo?.id, {
+        pickupTime: pickup.toISOString(),
+        notes,
+      });
+      if (!succeeded) return;
+    }
     onClose();
   };
 

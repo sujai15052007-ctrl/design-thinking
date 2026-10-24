@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   Plant,
   Sun,
@@ -27,13 +28,15 @@ export default function Navbar() {
     user,
     setUserRole,
     inventory,
-    alerts,
+    notifications,
+    markNotificationsRead,
     setIsAddItemOpen,
-    setShowOnboarding
   } = useApp();
+  const { logout } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Count expiring soon or urgent items
   const expiringCount = inventory.filter(
@@ -49,13 +52,33 @@ export default function Navbar() {
     { id: 'analytics', label: 'Analytics', icon: ChartBar },
     { id: 'gamification', label: 'Leaderboard', icon: Trophy },
     { id: 'admin', label: 'NGO Dispatch', icon: ShieldCheck }
-  ];
+  ].filter((item) => item.id !== 'admin' || user?.role === 'ngo');
 
   const handleNavClick = (viewId) => {
     setCurrentView(viewId);
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (!user) {
+    return (
+      <header style={{ position: 'sticky', top: 0, zIndex: 'var(--z-nav)', backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border-primary)' }}>
+        <div className="container-wide" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72, gap: 'var(--space-4)' }}>
+          <button className="btn btn-ghost" onClick={() => handleNavClick('landing')} aria-label="ReRoot overview">
+            <Plant size={24} weight="duotone" color="var(--color-forest)" />
+            <strong style={{ color: 'var(--text-primary)' }}>ReRoot</strong>
+          </button>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => handleNavClick('login')}>Sign in</button>
+            <button className="btn btn-primary btn-sm" onClick={() => handleNavClick('register')}>Create account</button>
+            <button className="btn btn-secondary btn-icon" onClick={toggleTheme} aria-label="Toggle dark mode">
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header
@@ -81,14 +104,18 @@ export default function Navbar() {
         }}
       >
         {/* Brand / Logo */}
-        <div
+        <button
+          type="button"
+          className="btn btn-ghost"
           onClick={() => handleNavClick('landing')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--space-3)',
             cursor: 'pointer',
-            userSelect: 'none'
+            userSelect: 'none',
+            border: 0,
+            textAlign: 'left',
           }}
         >
           <div
@@ -132,7 +159,7 @@ export default function Navbar() {
               Food Reclamation
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Desktop Navigation Links */}
         <nav
@@ -205,6 +232,36 @@ export default function Navbar() {
             <span style={{ display: 'none' }} className="sm-inline">Log Item</span>
           </button>
 
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => {
+                setNotificationsOpen((open) => !open);
+                if (notifications.some((item) => !item.isRead)) markNotificationsRead();
+              }}
+              className="btn btn-secondary btn-icon"
+              aria-label={`Notifications${notifications.filter((item) => !item.isRead).length ? `, ${notifications.filter((item) => !item.isRead).length} unread` : ''}`}
+              aria-expanded={notificationsOpen}
+              style={{ width: '38px', height: '38px', padding: 0, justifyContent: 'center', position: 'relative' }}
+            >
+              <Bell size={18} />
+              {notifications.some((item) => !item.isRead) && (
+                <span style={{ position: 'absolute', right: -3, top: -3, minWidth: 16, height: 16, borderRadius: '50%', background: 'var(--color-danger)', color: 'white', fontSize: 10, lineHeight: '16px' }}>
+                  {notifications.filter((item) => !item.isRead).length}
+                </span>
+              )}
+            </button>
+            {notificationsOpen && (
+              <div role="dialog" aria-label="Notifications" style={{ position: 'absolute', right: 0, top: '110%', width: 300, maxHeight: 320, overflowY: 'auto', padding: 'var(--space-3)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', background: 'var(--bg-elevated)', boxShadow: 'var(--shadow-lg)', zIndex: 300 }}>
+                <strong>Notifications</strong>
+                {notifications.length === 0 ? <p className="text-body">You are all caught up.</p> : notifications.map((notification) => (
+                  <p key={notification.id} style={{ paddingBlock: 'var(--space-2)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
+                    {notification.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Role Switcher Pill */}
           <div style={{ position: 'relative' }}>
             <button
@@ -232,6 +289,7 @@ export default function Navbar() {
               />
               <span style={{ textTransform: 'capitalize' }}>{user.role}</span>
             </button>
+            <button className="btn btn-ghost btn-sm" onClick={logout} aria-label="Sign out">Sign out</button>
 
             {roleDropdownOpen && (
               <div

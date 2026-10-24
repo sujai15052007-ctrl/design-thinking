@@ -1,9 +1,11 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAlerts } from '../../hooks/useAlerts';
 import { Warning, Bell, ArrowRight, X, CookingPot, Handshake } from '@phosphor-icons/react';
 
 export default function SmartAlertsBanner() {
-  const { alerts, dismissAlert, setCurrentView, setSelectedRecipeForModal, recipes, setSelectedNgoForDonation, setIsScheduleDonationOpen, ngos } = useApp();
+  const { dismissAlert } = useAlerts();
+  const { alerts, setCurrentView, setSelectedRecipeForModal, recipes, setSelectedNgoForDonation, setIsScheduleDonationOpen, ngos } = useApp();
 
   if (!alerts || alerts.length === 0) return null;
 

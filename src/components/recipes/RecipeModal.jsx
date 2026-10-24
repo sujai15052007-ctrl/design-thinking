@@ -3,12 +3,12 @@ import { useApp } from '../../context/AppContext';
 import { X, CookingPot, Check, Sparkle, Clock, Fire, LightbulbFilament } from '@phosphor-icons/react';
 
 export default function RecipeModal({ recipe, onClose }) {
-  const { markAsConsumed, inventory, showToast } = useApp();
+  const { markItemsUsedInRecipe, inventory, showToast } = useApp();
 
   if (!recipe) return null;
 
   // Handler to consume all matching ingredients in one click
-  const handleCookRecipe = () => {
+  const handleCookRecipe = async () => {
     // Find matching items in user's active inventory
     const matchedInvItems = inventory.filter(item =>
       recipe.matchingIngredients.some(ing =>
@@ -19,10 +19,7 @@ export default function RecipeModal({ recipe, onClose }) {
     if (matchedInvItems.length === 0) {
       showToast('No matching items currently left in your inventory.', 'info');
     } else {
-      matchedInvItems.forEach(item => {
-        markAsConsumed(item.id);
-      });
-      showToast(`Bon appétit! Used ${matchedInvItems.length} ingredients from your fridge.`, 'success');
+      await markItemsUsedInRecipe(matchedInvItems.map((item) => item.id));
     }
 
     onClose();

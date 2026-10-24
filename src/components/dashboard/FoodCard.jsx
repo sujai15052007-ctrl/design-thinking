@@ -196,7 +196,7 @@ export default function FoodCard({ item }) {
             onClick={() => markAsConsumed(item.id)}
             className="btn btn-primary btn-sm"
             style={{ justifyContent: 'center', gap: '4px' }}
-            title="Mark as eaten (+50 XP, prevents waste)"
+            title="Mark as eaten (+10 eco points, prevents waste)"
           >
             <Check size={14} weight="bold" />
             <span>Consumed</span>

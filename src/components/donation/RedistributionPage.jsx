@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import MockMap from './MockMap';
+import ShelterMap from './ShelterMap';
 import NgoCard from './NgoCard';
 import ScheduleDonationModal from './ScheduleDonationModal';
 import {
@@ -24,8 +24,11 @@ export default function RedistributionPage() {
     setSelectedNgoForDonation
   } = useApp();
 
-  const [activeNgo, setActiveNgo] = useState(ngos[0]);
+  const [activeNgoId, setActiveNgoId] = useState(null);
+  const activeNgo = ngos.find((ngo) => ngo.id === activeNgoId) || ngos[0] || null;
   const [filterType, setFilterType] = useState('All'); // 'All' | 'Urgent' | 'Refrigerated'
+
+  const setActiveNgo = (ngo) => setActiveNgoId(ngo?.id || null);
 
   const filteredNgos = ngos.filter(n => {
     if (filterType === 'Urgent') return n.capacityStatus === 'urgent';
@@ -148,10 +151,11 @@ export default function RedistributionPage() {
             </span>
           </div>
 
-          <MockMap
+          <ShelterMap
             ngos={filteredNgos}
             selectedNgo={activeNgo}
             onSelectNgo={setActiveNgo}
+            onDonateNgo={handleOpenSchedule}
           />
 
           {/* Map Footnote */}

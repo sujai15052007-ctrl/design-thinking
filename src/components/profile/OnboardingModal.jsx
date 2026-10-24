@@ -12,8 +12,10 @@ import {
 } from '@phosphor-icons/react';
 
 export default function OnboardingModal({ onClose }) {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, user, setUser, showToast } = useApp();
   const [currentStep, setCurrentStep] = useState(0);
+  const [role, setRole] = useState(user?.role || 'household');
+  const [units, setUnits] = useState(user?.preferences?.measurementUnit || 'metric');
 
   const steps = [
     {
@@ -53,12 +55,21 @@ export default function OnboardingModal({ onClose }) {
   const current = steps[currentStep];
   const Icon = current.icon;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      onClose();
-      setCurrentView('dashboard');
+      try {
+        await setUser((previous) => ({
+          ...previous,
+          role,
+          preferences: { ...previous.preferences, measurementUnit: units },
+        }));
+        onClose();
+        setCurrentView('dashboard');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
     }
   };
 
@@ -133,6 +144,26 @@ export default function OnboardingModal({ onClose }) {
           >
             {current.subtitle}
           </div>
+
+          {currentStep === 0 && (
+            <div style={{ display: 'grid', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <div className="input-group">
+                <label className="input-label" htmlFor="onboarding-role">Your role</label>
+                <select id="onboarding-role" className="input select" value={role} onChange={(event) => setRole(event.target.value)}>
+                  <option value="household">Home cook</option>
+                  <option value="business">Business</option>
+                  <option value="ngo">NGO food bank</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label className="input-label" htmlFor="onboarding-units">Measurement units</label>
+                <select id="onboarding-units" className="input select" value={units} onChange={(event) => setUnits(event.target.value)}>
+                  <option value="metric">Metric</option>
+                  <option value="imperial">Imperial</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           <h3
             className="text-heading-3"

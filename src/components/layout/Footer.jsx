@@ -155,8 +155,8 @@ export default function Footer() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', color: 'var(--color-sand)', fontSize: 'var(--text-sm)' }}>
               <div>
-                <strong style={{ color: '#ffffff', display: 'block', fontFamily: 'var(--font-display)' }}>Local-First Privacy</strong>
-                All pantry inventories are maintained client-side in browser state.
+                <strong style={{ color: '#ffffff', display: 'block', fontFamily: 'var(--font-display)' }}>Account Data & Privacy</strong>
+                Inventory and community activity sync to your ReRoot account.
               </div>
               <div>
                 <strong style={{ color: '#ffffff', display: 'block', fontFamily: 'var(--font-display)' }}>Food Safety Protocols</strong>

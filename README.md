@@ -1,110 +1,126 @@
-# ReRoot — Regenerative Food Waste Management System
+# ReRoot — Regenerative Food Waste Management
 
-> **A design thinking prototype for hyper-local food waste prevention, pantry expiry tracking, mutual-aid shelter redistribution, and community food sharing.**
+ReRoot helps households and local food businesses track food before it expires, find recipes, donate surplus to shelters, and share extra food with neighbors. The React/Vite client now uses an Express API backed by MySQL.
 
----
+## Features
 
-## 🌿 Core Features
+- Food inventory, expiry alerts, barcode lookup through Open Food Facts, and metric/imperial display conversion
+- Shelter matching on an OpenStreetMap-based map and scheduled food donations
+- Community surplus listings, claims, and notifications
+- Recipes matched against food approaching expiry
+- Waste diversion analytics, CO2 estimates, activity streak calendar, and CSV exports
+- Eco points, streaks, badges, leaderboard, and an NGO donation dashboard
+- Profile, account roles (`home`, `business`, `ngo`), onboarding, and dark mode
+- Daily expiry reminders; email delivery is optional and requires SMTP configuration
 
-1. **Editorial Landing Page**:
-   - Asymmetric split hero with 2-line maximum heading.
-   - Interactive Problem-Story comparison (Linear Landfill Pipeline vs. Circular ReRoot Regeneration).
-   - Real-time animated counters: Waste Diverted (142.8 tonnes), Meals Matched (124,500), CO2e Averted (312 tonnes).
-   - Gapless 12-column Bento feature showcase.
-   - Continuous partner & chef testimonial marquee.
+## Requirements
 
-2. **Active Food Inventory Tracker**:
-   - Shelf-life buffer countdown indicators with color-coded urgency chips (`<24h`, `2-3d`, `4+d`).
-   - Category filtering (Produce, Bakery, Dairy, Pantry, Prepared Meals, Proteins).
-   - Storage location sorting (Fridge, Pantry, Freezer, Countertop).
-   - Quick actions: **Mark as Consumed** (+50 Eco XP), **Donate to Shelter**, **Find Recipes**, and **Discard**.
-   - Card grid and high-density Table view modes.
-   - Quick-add food modal with pantry presets.
+- Node.js 20.19+ (recommended: current LTS) and npm
+- MySQL 8.0+ (JSON columns and `CHECK`/foreign-key support)
 
-3. **Smart Expiry Alerts & Nudges**:
-   - Contextual radar banners for items approaching expiration with 1-click recipe or donation actions.
+## Setup
 
-4. **Mutual-Aid Redistribution & Shelter Matchmaker**:
-   - Interactive topographical canvas map with custom shelter pins and 2km radius indicator.
-   - Shelter profiles with operating hours, intake urgency, cold storage readiness, and accepted provisions.
-   - Multi-item donation scheduler with volunteer cargo-bike courier dispatching.
+### 1. Install dependencies
 
-5. **Waste Diversion & Carbon Analytics**:
-   - Recharts monthly biomass trend area chart (Diverted vs. Discarded in kg).
-   - Category diversion donut chart.
-   - Financial capital preserved ($ CAD) monthly bar chart.
-   - Destination split breakdown (Consumed, Shelter, Neighbors, Compost).
+From the project root:
 
-6. **Neighborhood Surplus Marketplace**:
-   - Hyper-local gift economy for sharing extra portions and garden harvests.
-   - Dietary & allergen tags (Vegan, Halal, Gluten-Free, Nut-Free).
-   - 1-click portion reservation and claim flow.
-
-7. **Zero-Waste Culinary Generator**:
-   - Live scanning of crisper inventory matching available ingredients to chef-crafted recipes.
-   - Match percentage indicators and chef's zero-scrap cooking techniques.
-   - 1-click "Mark Ingredients as Cooked" action.
-
-8. **Gamification & Community Champions**:
-   - Eco-Score & level tier progression (Canopy Guardian -> Ecosystem Steward).
-   - 19-day zero-discard streak counter.
-   - Tiered badges (Bronze, Silver, Gold, Diamond) with criteria.
-   - Community diversion leaderboard.
-
-9. **NGO Dispatch Logistics**:
-   - Dedicated intake portal for shelter coordinators.
-   - Status pipeline (*Pending Verification → Scheduled → En Route → Completed*).
-   - Certified scale weight intake modal for official donation receipts.
-
-10. **Profile, Settings & Onboarding**:
-    - Perspective switcher: **Home Cook**, **Local Bakery/Cafe**, **NGO Food Bank**.
-    - Notification controls, dietary preferences, and measurement unit toggle (Metric vs. Imperial).
-    - 4-step interactive onboarding walkthrough tour.
-
----
-
-## 🎨 Design System
-
-- **Palette**: Earthy and sustainable — Forest Green (`#2D5016`), Terracotta (`#C4652E`), Wheat (`#D4A747`), Warm Cream (`#FAF7F2`), Sand (`#D4CBBF`), Charcoal Night (`#1A1714`).
-- **Typography**: Google Fonts `Outfit` (display) + `Source Serif 4` (editorial body) + `JetBrains Mono` (numerical data).
-- **Dark Mode**: Complete CSS custom property tokens with smooth theme transitions.
-- **Local Persistence**: Client-side state persistence via `localStorage` with React Context.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or pnpm
-
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/thanusrajm05-code/food-waste-management-.git
-cd food-waste-management-
-
-# Install dependencies
+```powershell
 npm install
+npm --prefix server install
+```
 
-# Start development server
+### 2. Create the database and seed demo data
+
+The schema creates the `reroot` database and its tables:
+
+```powershell
+mysql -u root -p < server/schema.sql
+mysql -u root -p reroot < server/seed.sql
+```
+
+You may also run these two SQL files using MySQL Workbench. Use a MySQL account with permission to create the database, tables, and seed rows.
+
+The seed includes eight Vancouver-area food banks/shelters, five badges, and one demo account per role:
+
+| Role | Email | Password |
+|---|---|---|
+| Home cook | `home@reroot.local` | `password` |
+| Business | `business@reroot.local` | `password` |
+| NGO | `ngo@reroot.local` | `password` |
+
+Change demo passwords before using these accounts outside a local development environment.
+
+### 3. Configure the API environment
+
+Copy `server/.env.example` to `server/.env`, then set MySQL credentials and a private JWT secret. The API reads database credentials and secrets from environment variables; do not commit `.env`.
+
+```powershell
+Copy-Item server\.env.example server\.env
+```
+
+Required settings:
+
+```dotenv
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_NAME=reroot
+JWT_SECRET=replace-with-a-long-random-secret
+CLIENT_ORIGIN=http://localhost:5173
+PORT=5000
+```
+
+The optional SMTP variables in `server/.env.example` enable email reminders. With SMTP settings omitted, reminders are created as in-app notifications only.
+
+### 4. Start the application
+
+Run both Vite and the API:
+
+```powershell
 npm run dev
 ```
 
-Visit `http://localhost:5173/` in your browser.
+Or run one process at a time:
 
-### Production Build
-```bash
-npm run build
-npm run preview
+```powershell
+npm run dev:client
+npm run dev:server
 ```
 
----
+The client is served at `http://localhost:5173`; the API listens at `http://localhost:5000`. Vite proxies `/api` requests to the API. For production, use `npm run build` to build the client and `npm --prefix server start` to start the API.
 
-## 📦 Tech Stack
+## API
 
-- **Framework**: React 19 + Vite 8
-- **Charts**: Recharts
-- **Icons**: Phosphor Icons (`@phosphor-icons/react`)
-- **Animation**: Framer Motion
-- **Styling**: Vanilla CSS Design Tokens (Earthy / Sustainable Design System)
+Except for registration and login, API routes require `Authorization: Bearer <token>`. Tokens expire after seven days. Validation and server errors use JSON responses with an `error` field. NGO endpoints and donation acceptance/completion require the `ngo` role.
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| POST | `/api/auth/register` | Public | Create an account |
+| POST | `/api/auth/login` | Public | Sign in and receive a JWT |
+| GET | `/api/auth/me` | Authenticated | Read the signed-in account |
+| GET, POST | `/api/inventory` | Authenticated | List items with category/location/status/search/sort filters; add an item |
+| PUT, PATCH, DELETE | `/api/inventory/:id` | Authenticated | Edit, change status (`PATCH /:id/status`), or remove an owned item |
+| GET | `/api/alerts?days=3` | Authenticated | Read expiring food alerts |
+| GET | `/api/notifications` | Authenticated | List notifications |
+| POST | `/api/notifications/read` | Authenticated | Mark notifications read; omit IDs to mark all read |
+| GET | `/api/analytics` | Authenticated | Monthly waste/diversion, category breakdown, and impact totals |
+| GET | `/api/analytics/history` | Authenticated | Read waste activity history for CSV export |
+| GET | `/api/shelters?lat=49.26&lng=-123.12` | Authenticated | List shelters, optionally nearest-first |
+| GET, POST | `/api/donations` | Authenticated | List a donor's donations or schedule a donation |
+| PATCH | `/api/donations/:id` | Donor / NGO | Cancel as donor; accept or complete as NGO |
+| GET | `/api/ngo/incoming-donations` | NGO | View incoming and completed donations |
+| GET | `/api/ngo/stats` | NGO | Read donation count and received weight |
+| GET, POST, DELETE | `/api/marketplace` | Authenticated | Browse, post, or remove an open listing |
+| POST | `/api/marketplace/:id/claim` | Authenticated | Claim an available listing |
+| GET | `/api/recipes/suggest` | Authenticated | Suggest recipes from soon-expiring items |
+| GET | `/api/rewards` | Authenticated | Read eco score, streak, and earned badges |
+| GET | `/api/leaderboard` | Authenticated | Read community rankings |
+| GET, PUT | `/api/profile` | Authenticated | Read or update name, role, units, theme, and preferences |
+| GET | `/api/health` | Public | Check API process health |
+
+## Data and privacy notes
+
+The MySQL database is the source of truth for accounts, food inventory, notifications, donations, marketplace activity, rewards, and analytics history. Browser `localStorage` is limited to the JWT, theme, unit preference, and onboarding-completed flag. MySQL stores mass quantities in kilograms; the client converts them for display based on the saved unit preference.
+
+Barcode scanning needs camera permission and internet access. Product names/categories are looked up using Open Food Facts; recipe suggestions use TheMealDB with local recipe suggestions as a fallback. The map uses OpenStreetMap tiles.

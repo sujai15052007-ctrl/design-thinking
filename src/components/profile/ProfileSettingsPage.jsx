@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import OnboardingModal from './OnboardingModal';
 import {
   UserCircle,
@@ -18,6 +19,7 @@ import {
 
 export default function ProfileSettingsPage() {
   const { user, setUser, setUserRole, showToast } = useApp();
+  const { logout } = useAuth();
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const [name, setName] = useState(user.name);
@@ -37,29 +39,26 @@ export default function ProfileSettingsPage() {
     );
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setUser(prev => ({
-      ...prev,
-      name,
-      location,
-      bio,
-      preferences: {
-        ...prev.preferences,
-        dietary,
-        measurementUnit,
-        notifyExpiring24h: notify24h,
-        notifyCommunityClaim: notifyMarketplace,
-        notifyDonationPickup: notifyPickup
-      }
-    }));
-    showToast('Profile and preferences updated successfully.', 'success');
-  };
-
-  const handleResetData = () => {
-    if (window.confirm('Reset all inventory, marketplace, and dispatch states back to baseline demo defaults?')) {
-      localStorage.clear();
-      window.location.reload();
+    try {
+      await setUser(prev => ({
+        ...prev,
+        name,
+        location,
+        bio,
+        preferences: {
+          ...prev.preferences,
+          dietary,
+          measurementUnit,
+          notifyExpiring24h: notify24h,
+          notifyCommunityClaim: notifyMarketplace,
+          notifyDonationPickup: notifyPickup
+        }
+      }));
+      showToast('Profile and preferences updated successfully.', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
     }
   };
 
@@ -180,21 +179,21 @@ export default function ProfileSettingsPage() {
             </button>
           </div>
 
-          {/* Demo Reset Button */}
+          {/* Session Controls */}
           <div className="card" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px dashed var(--color-danger)' }}>
             <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--color-danger)', marginBottom: '4px' }}>
               Data Controls
             </h4>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-              Reset client state back to starting demo data.
+              Sign out of this ReRoot account on this device.
             </p>
             <button
-              onClick={handleResetData}
+              onClick={logout}
               className="btn btn-ghost btn-sm"
               style={{ color: 'var(--color-danger)', border: '1px solid var(--color-danger)', width: '100%', justifyContent: 'center' }}
             >
               <ArrowClockwise size={14} />
-              <span>Reset Demo State</span>
+              <span>Sign out</span>
             </button>
           </div>
         </div>
@@ -216,8 +215,10 @@ export default function ProfileSettingsPage() {
                   const Icon = r.icon;
                   const isSelected = user.role === r.role;
                   return (
-                    <div
+                    <button
                       key={r.role}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => setUserRole(r.role)}
                       style={{
                         padding: 'var(--space-4)',
@@ -225,7 +226,9 @@ export default function ProfileSettingsPage() {
                         border: `1.5px solid ${isSelected ? 'var(--color-forest)' : 'var(--border-secondary)'}`,
                         backgroundColor: isSelected ? 'var(--color-success-light)' : 'var(--bg-secondary)',
                         cursor: 'pointer',
-                        transition: 'all 150ms ease'
+                        transition: 'all 150ms ease',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
                       }}
                     >
                       <Icon size={20} color={isSelected ? 'var(--color-forest)' : 'var(--text-tertiary)'} weight={isSelected ? 'fill' : 'regular'} style={{ marginBottom: '6px' }} />
@@ -235,7 +238,7 @@ export default function ProfileSettingsPage() {
                       <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                         {r.desc}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

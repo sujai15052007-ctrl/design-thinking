@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import BarcodeScanner from './BarcodeScanner';
 import { X, Plus, Calendar, Tag, Package, MapPin, Sparkle } from '@phosphor-icons/react';
 
 export default function AddFoodModal() {
-  const { isAddItemOpen, setIsAddItemOpen, addInventoryItem } = useApp();
+  const { isAddItemOpen, setIsAddItemOpen, addInventoryItem, user } = useApp();
 
   // Sensible default expiry: 3 days from today
   const defaultExpiry = new Date();
@@ -11,6 +12,7 @@ export default function AddFoodModal() {
   const defaultExpiryStr = defaultExpiry.toISOString().split('T')[0];
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const imperial = user?.preferences?.measurementUnit === 'imperial';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -26,6 +28,7 @@ export default function AddFoodModal() {
   });
 
   const [formErrors, setFormErrors] = useState({});
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   if (!isAddItemOpen) return null;
 
@@ -133,6 +136,17 @@ export default function AddFoodModal() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setScannerOpen((open) => !open)}>
+              {scannerOpen ? 'Hide barcode scanner' : 'Scan barcode'}
+            </button>
+            {scannerOpen && (
+              <BarcodeScanner
+                onProduct={(product) => setFormData((current) => ({ ...current, ...product }))}
+                onClose={() => setScannerOpen(false)}
+              />
+            )}
+          </div>
           {/* Name */}
           <div className="input-group">
             <label className="input-label" htmlFor="food-name">Food Title *</label>
@@ -213,8 +227,17 @@ export default function AddFoodModal() {
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
               >
                 <option value="items">items / pieces</option>
-                <option value="g">grams (g)</option>
-                <option value="kg">kilograms (kg)</option>
+                {imperial ? (
+                  <>
+                    <option value="oz">ounces (oz)</option>
+                    <option value="lb">pounds (lb)</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="g">grams (g)</option>
+                    <option value="kg">kilograms (kg)</option>
+                  </>
+                )}
                 <option value="loaf">loaf</option>
                 <option value="cartons">cartons</option>
                 <option value="ml">milliliters (ml)</option>

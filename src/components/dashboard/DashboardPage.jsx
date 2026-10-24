@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useInventory } from '../../hooks/useInventory';
+import { exportCsv } from '../../utils/exportCsv';
 import FoodCard from './FoodCard';
 import FoodTable from './FoodTable';
 import SmartAlertsBanner from '../alerts/SmartAlertsBanner';
@@ -18,7 +20,8 @@ import {
 } from '@phosphor-icons/react';
 
 export default function DashboardPage() {
-  const { inventory, setIsAddItemOpen, user } = useApp();
+  const { setIsAddItemOpen, user } = useApp();
+  const { inventory } = useInventory();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -99,6 +102,16 @@ export default function DashboardPage() {
   return (
     <div className="container-wide" style={{ paddingBlock: 'var(--space-8)' }}>
       {/* Top Header & Overview Bar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => exportCsv('reroot-inventory.csv', inventory)}
+          disabled={!inventory.length}
+          aria-label="Export inventory as CSV"
+        >
+          Export inventory CSV
+        </button>
+      </div>
       <div
         style={{
           display: 'flex',

@@ -14,12 +14,12 @@ import {
 } from '@phosphor-icons/react';
 
 export default function NgoAdminPage() {
-  const { ngoRequests, updateNgoRequestStatus, showToast } = useApp();
+  const { ngoRequests, updateNgoRequestStatus, showToast, ngoStats } = useApp();
   const [filterStatus, setFilterStatus] = useState('All');
   const [selectedRequestForWeight, setSelectedRequestForWeight] = useState(null);
   const [weighedInput, setWeighedInput] = useState('');
 
-  const statuses = ['All', 'Pending Verification', 'Scheduled', 'En Route', 'Completed'];
+  const statuses = ['All', 'Scheduled', 'En Route', 'Completed'];
 
   const filteredRequests = ngoRequests.filter((req) => {
     if (filterStatus !== 'All' && req.status !== filterStatus) return false;
@@ -30,12 +30,13 @@ export default function NgoAdminPage() {
     updateNgoRequestStatus(reqId, newStatus);
   };
 
-  const handleVerifyWeight = (e) => {
+  const handleVerifyWeight = async (e) => {
     e.preventDefault();
     if (!weighedInput || !selectedRequestForWeight) return;
 
-    updateNgoRequestStatus(selectedRequestForWeight.id, 'Completed');
-    showToast(`Logged verified weight: ${weighedInput} kg for ${selectedRequestForWeight.donorName}. Official donation tax receipt issued!`, 'success');
+    const completed = await updateNgoRequestStatus(selectedRequestForWeight.id, 'Completed', Number(weighedInput));
+    if (!completed) return;
+    showToast(`Logged verified weight: ${weighedInput} kg for ${selectedRequestForWeight.donorName}.`);
     setSelectedRequestForWeight(null);
     setWeighedInput('');
   };
@@ -44,7 +45,7 @@ export default function NgoAdminPage() {
   const totalPending = ngoRequests.filter(r => r.status === 'Pending Verification').length;
   const totalEnRoute = ngoRequests.filter(r => r.status === 'En Route').length;
   const totalCompleted = ngoRequests.filter(r => r.status === 'Completed').length;
-  const totalWeightKg = ngoRequests.reduce((sum, r) => sum + (r.verifiedWeightKg || 0), 0);
+  const totalWeightKg = Number(ngoStats.kgReceived || 0);
 
   return (
     <div className="container-wide" style={{ paddingBlock: 'var(--space-8)' }}>
@@ -211,7 +212,7 @@ export default function NgoAdminPage() {
                         style={{ fontSize: '11px', padding: '4px 8px' }}
                       >
                         <Bicycle size={13} weight="bold" />
-                        <span>Dispatch Courier</span>
+                        <span>Accept & Dispatch</span>
                       </button>
                     )}
 
